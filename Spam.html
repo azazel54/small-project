@@ -1,0 +1,144 @@
+﻿<style>
+div.centre {
+	display: inline-block; 
+	border: 10px solid red; 
+	padding: 20px; position: 
+	absolute; 
+	margin: auto; 
+	top:0; 
+	bottom: 0; 
+	left: 0; 
+	right: 0; 
+	width: 700px; 
+	height: 150px;
+	text-align: center;
+}
+div.loading {
+	border: 2px solid;
+	width: 695px;
+}
+</style> 
+
+<html>
+
+  <head>
+  
+  <body onkeydown="keyEvent(event)" onkeyup="keyRelease(event)">
+  
+    <div class="centre">
+		<b>Cooldown (ms) :</b> 
+		<input id="cdUser" onkeypress='return event.charCode >= 48 && event.charCode <= 57' type="text" value="600" size=2 maxlength=4>&nbsp;&nbsp;&nbsp;&nbsp;
+		<b>Keybind :</b> 
+		<span id="keyUser"><input type="submit" onclick="keyBinding()" value="E (Click to replace)"></span>		
+		<br/><br/><br/>
+		<b><div id="spam">Prêt !</div></b><br/>
+		<div id="loading" class="loading"></div>
+		<br/><br/>
+		<b>Number of spells used :</b> <span id="spellUsed">0</span>
+		<b> | Time spent :</b> <span id="timeSpent">00:00</span>	
+		<b> | Optimization :</b> <span id="opti">100</span>%
+    </div>
+	
+  </body>
+
+  </head>
+
+  </html>
+
+<script>//A noter que l'on entre dans la partie du code en JavaScript, soit une synthaxe des commentaires différentes.
+spam=document.getElementById("spam");
+keyUser=document.getElementById("keyUser");
+cdUser=document.getElementById("cdUser");
+spellUsed=document.getElementById("spellUsed");
+timeSpent=document.getElementById("timeSpent");
+opti=document.getElementById("opti");
+loading=document.getElementById("loading");
+var cd=600; var keyBind=69; // Données utilisateurs cooldowns et id de la touche choisie.
+var waiting=false; // En attente ou non de la pression de touche pour choisir le bind.
+var now=0; // Donnée qui contient le temps actuel en millisecondes
+var diff=0; // Donnée temporelle qui gère la différence de temps entre deux temps.
+var start=0; var left=0;  // Données de temps qui gèrent le cooldown du spell : Début du CD, temps restant.
+var sessionStart=0; // Données de temps qui marque le début d'une session de spam.
+var sec=0; var cen=0; // Données d'affichage des secondes et centièmes
+var spellNumber=0; // Nombre de spells utilisés
+var ready=true; // Disponibilité ou non du sort
+var lastSpell=0; // Date du dernier spell lancé pour définir la temporalité d'une session.
+var locked=false; // La touche doit être relachée pour permettre un autre cast.
+
+
+
+function keyBinding(key) { 
+	if(waiting) {
+		keyBind=key;
+		waiting=false;
+		keyUser.innerHTML='<input type="submit" onclick="keyBinding()" value="'+String.fromCharCode(keyBind)+' (Click to replace)">';
+	}
+	
+	else {
+		keyUser.innerHTML="Appuyez sur la touche...";
+		waiting=true;
+	}
+}
+
+function cast() {
+	locked=true;
+	cd=cdUser.value; 
+	if(!isNaN(cd)) {
+		start=new Date();
+		if(start-lastSpell>3000) {
+			sessionStart=start;
+			spellNumber=1;
+			spellUsed.innerHTML="1";
+		}
+		
+		else {
+			spellNumber++;	
+			diff=start-sessionStart;
+			spellUsed.innerHTML=spellNumber;
+			opti.innerHTML=Math.floor(10000*(spellNumber-1)*cd/diff)/100;
+		}
+		lastSpell=start;
+		ready=false;
+		loading.style.visibility="visible";
+		count();
+	}
+}
+
+function count(){
+	now=new Date(); 
+	diff=now-start;
+	left=cd-diff;
+	
+	if(left<=0) { ready=true; loading.style.visibility="hidden"; spam.innerHTML="Prêt !"; 
+	}
+	
+	else {
+		// Affichage CD spell
+		sec=Math.floor(left/1000); cen=Math.floor((left-sec*1000)/10);
+		if(cen<10) { cen="0"+cen; }
+		if(sec<10) { sec="0"+sec; }
+		spam.innerHTML=sec+":"+cen;
+		loading.style.width=Math.floor(left*695/cd);
+		// Affichage CD global
+		diff=now-sessionStart;
+		sec=Math.floor(diff/1000); cen=Math.floor((diff-sec*1000)/10);
+		if(cen<10) { cen="0"+cen; }
+		if(sec<10) { sec="0"+sec; }
+		timeSpent.innerHTML=sec+":"+cen;
+		// 
+		setTimeout(count, 30);
+	}	
+}
+
+function keyEvent(event) {
+	var key = event.keyCode || event.which;
+	if(waiting) { keyBinding(key); }	
+	else if(key==keyBind && ready && !waiting && !locked) { cast(); }
+}
+
+function keyRelease(event) {
+	var key = event.keyCode || event.which;
+	if(key==keyBind) { locked=false; }
+}
+
+</script>
